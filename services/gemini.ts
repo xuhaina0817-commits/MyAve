@@ -1,6 +1,7 @@
 import { Message, Sender, Character } from "../types";
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY; 
+;
 const API_URL = "https://api.deepseek.com/chat/completions";
 
 // Internal type for OpenAI-compatible API

@@ -1,64 +1,102 @@
-<script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
-  }
-}
-</script>
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dialogue with Mutsumi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              serif: ['"Playfair Display"', '"Noto Serif SC"', 'serif'],
-              sans: ['"Inter"', 'sans-serif'],
-            },
-            colors: {
-              glass: {
-                100: 'rgba(255, 255, 255, 0.1)',
-                200: 'rgba(255, 255, 255, 0.2)',
-                border: 'rgba(255, 255, 255, 0.08)',
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0"
+      }
+    }
+    </script>
+    
+    <title>Dialogue with Mutsumi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    
+        <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['"Playfair Display"', '"Noto Serif SC"', 'serif'],
+              sans: ['"Inter"', 'sans-serif'],
+            },
+            colors: {
+              glass: {
+                100: 'rgba(255, 255, 255, 0.1)',
+                200: 'rgba(255, 255, 255, 0.2)',
+                border: 'rgba(255, 255, 255, 0.08)',
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float-up': 'floatUp 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              'float-up-fade': 'floatUpFade 1s ease-out forwards',
+              'float-slow': 'floatSlow 6s ease-in-out infinite',
+              'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both',
+              'pop': 'pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+              'glow-pulse': 'glowPulse 3s ease-in-out infinite',
+              'slash': 'slash 0.2s ease-out forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(15px) scale(0.98)' },
+                '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+              },
+              floatUp: {
+                '0%': { transform: 'translateY(0) scale(0.8)', opacity: '1' },
+                '100%': { transform: 'translateY(-30px) scale(1.1)', opacity: '0' },
+              },
+              floatUpFade: {
+                '0%': { transform: 'translateY(0) scale(1)', opacity: '1' },
+                '100%': { transform: 'translateY(-40px) scale(0.5)', opacity: '0' },
+              },
+              floatSlow: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-5px)' },
+              },
+              shake: {
+                '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
+              },
+              pop: {
+                '0%': { transform: 'scale(0.8)', opacity: '0' },
+                '100%': { transform: 'scale(1)', opacity: '1' },
+              },
+              glowPulse: {
+                '0%, 100%': { boxShadow: '0 0 0px rgba(255, 255, 255, 0)' },
+                '50%': { boxShadow: '0 0 8px rgba(255, 255, 255, 0.4)' },
+              },
+              slash: {
+                '0%': { transform: 'scaleX(0)' },
+                '100%': { transform: 'scaleX(1)' },
               }
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-              'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'float-up': 'floatUp 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-              'float-up-fade': 'floatUpFade 1s ease-out forwards',
-              'float-slow': 'floatSlow 6s ease-in-out infinite',
-              'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both',
-              'pop': 'pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              'glow-pulse': 'glowPulse 3s ease-in-out infinite',
-              'slash': 'slash 0.2s ease-out forwards',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              },
-              fadeInUp: {
-                '0%': { opacity: '0', transform: 'translateY(15px) scale(0.98)' },
-                '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
-              },
-              floatUp: {
-                '0%': { transform: 'translateY(0) scale(0.8)', opacity: '1' },
-                '100%': { transform: 'translateY(-30px) scale(1.1)', opacity: '0' },
-              },
-              floatUpFade: {
-                '0%': { transform: 'translateY(0) scale(1)', opacity: '1' },
-                '100%': { transform: 'translateY(-40px) scale(0.5)', opacity: '0' },
-              },
-              floatSlow: {
+            },
+            // 确保你有一个 #app 的入口 div
+            // 否则 React/Vite 应用无法挂载
+          }
+        }
+      };
+    </script>
+
+    <script type="module" src="/src/main.jsx"></script> 
+  </head>
+  <body>
+    <div id="root"></div> 
+  </body>
+</html>

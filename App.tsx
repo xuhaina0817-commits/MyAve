@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { CHARACTERS, initializeCharacterChat, initializeGroupChat, sendMessage } from './services/gemini';
+import { CHARACTERS, initializeCharacterChat, initializeGroupChat, sendMessage, setServiceUserName } from './services/gemini';
 import { Message, Sender, Session, Character } from './types';
 
 // --- Constants ---
 const STORAGE_KEY = 'mutsumi_chat_sessions_v4';
 const USER_AVATAR_KEY = 'user_avatar_global';
+const USER_NAME_KEY = 'user_name_global';
 const CHAR_AVATAR_KEY = 'char_avatars_map';
 const GROUP_THEME_COLOR = '#6b4c9a'; // Starlight Purple for groups
 
@@ -92,6 +92,7 @@ const AmbientBackground = ({ themeColor }: { themeColor: string }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    // Use window dimensions for the fixed background
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
     let animationId: number;
@@ -204,7 +205,7 @@ const AmbientBackground = ({ themeColor }: { themeColor: string }) => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-0" />;
+  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 };
 
 const Avatar = ({ className = "", customSrc, character }: { className?: string, customSrc?: string | null, character?: Character }) => {
@@ -233,7 +234,7 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
 
   return (
     <div 
-      className="absolute top-4 left-4 right-4 h-16 z-30 flex items-center justify-between px-6 rounded-[2rem] glass-panel transition-colors duration-500"
+      className="absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-4 h-16 z-30 flex items-center justify-between px-6 rounded-[2rem] glass-panel transition-all duration-500 shadow-xl"
       style={{ border: `1px solid ${themeColor}20` }}
     >
        <div className="flex items-center gap-4 overflow-hidden">
@@ -568,7 +569,9 @@ const Sidebar = ({
   onCreateGroup,
   onDeleteSession,
   onUploadCharAvatar,
-  charAvatars
+  charAvatars,
+  userName,
+  onUserNameChange
 }: { 
   activeCharacterId: string | null, 
   onSelectCharacter: (id: string) => void,
@@ -580,7 +583,9 @@ const Sidebar = ({
   onCreateGroup: () => void,
   onDeleteSession: (id: string) => void,
   onUploadCharAvatar: (id: string) => void,
-  charAvatars: Record<string, string>
+  charAvatars: Record<string, string>,
+  userName: string,
+  onUserNameChange: (name: string) => void
 }) => {
   const activeCharacter = activeCharacterId ? CHARACTERS[activeCharacterId] : null;
   const bands = ['MyGO!!!!!', 'Ave Mujica'];
@@ -793,11 +798,17 @@ const Sidebar = ({
                Bilibili @-Alisss-
            </a>
            <div className="pt-3 border-t border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 p-3 rounded-2xl transition-colors group" onClick={onUploadUserAvatar}>
-               <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-white/30 transition-colors">
+               <div className="flex items-center gap-3 w-full">
+                   <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-white/30 transition-colors shrink-0">
                        {userAvatar ? <img src={userAvatar} alt="Me" className="w-full h-full object-cover" /> : <Icons.User />}
                    </div>
-                   <span className="text-xs text-gray-400 group-hover:text-white transition-colors">User</span>
+                   <input 
+                      value={userName}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => onUserNameChange(e.target.value)}
+                      className="bg-transparent border-none outline-none text-xs text-gray-400 group-hover:text-white transition-colors w-full placeholder-white/20 focus:text-white"
+                      placeholder="Your Name"
+                   />
                </div>
            </div>
       </div>
@@ -894,6 +905,7 @@ const App = () => {
   const [isSending, setIsSending] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>(() => localStorage.getItem(USER_NAME_KEY) || "User");
   const [charAvatars, setCharAvatars] = useState<Record<string, string>>({});
   const [tempCharIdForAvatar, setTempCharIdForAvatar] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -918,6 +930,9 @@ const App = () => {
 
     if (storedUserAvatar) setUserAvatar(storedUserAvatar);
     if (storedCharAvatars) setCharAvatars(JSON.parse(storedCharAvatars));
+
+    // Initialize the username in the service on mount
+    setServiceUserName(userName);
 
     if (storedSessions) {
         try {
@@ -956,6 +971,12 @@ const App = () => {
   useEffect(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [currentSession?.messages, isSending, draftCharacterId]);
+
+  // Update localStorage and service when userName changes
+  useEffect(() => {
+      localStorage.setItem(USER_NAME_KEY, userName);
+      setServiceUserName(userName);
+  }, [userName]);
 
   const handleSendMessage = async () => {
       if (!inputText.trim() && !isSending) return;
@@ -1105,7 +1126,7 @@ const App = () => {
   const displayMessages = currentSession ? currentSession.messages : [];
   
   return (
-    <div className="flex h-screen bg-[#0a0c0b] text-gray-100 font-sans overflow-hidden relative selection:bg-white/20">
+    <div className="fixed inset-0 h-[100dvh] w-screen bg-[#0a0c0b] text-gray-100 font-sans overflow-hidden relative selection:bg-white/20">
         <AmbientBackground themeColor={themeColor} />
 
         {isSidebarOpen && (
@@ -1128,10 +1149,12 @@ const App = () => {
                 onDeleteSession={handleDeleteSession}
                 onUploadCharAvatar={(id) => { setTempCharIdForAvatar(id); charAvatarInputRef.current?.click(); }}
                 charAvatars={charAvatars}
+                userName={userName}
+                onUserNameChange={setUserName}
              />
         </div>
 
-        <div className="flex-1 flex flex-col relative md:ml-80 h-full w-full md:w-[calc(100%-20rem)] p-4">
+        <div className="relative flex flex-col h-full w-full md:ml-80 md:w-[calc(100%-20rem)] overflow-hidden">
             <ChatHeader 
                 character={activeCharacter || null} 
                 session={currentSession}
@@ -1139,7 +1162,7 @@ const App = () => {
                 charAvatars={charAvatars}
             />
             
-            <div className="flex-1 overflow-y-auto px-4 py-20 custom-scrollbar space-y-8 mask-gradient" onClick={() => setIsSidebarOpen(false)}>
+            <div className="flex-1 overflow-y-auto px-4 py-24 custom-scrollbar space-y-8 mask-gradient relative z-10" onClick={() => setIsSidebarOpen(false)}>
                 {!currentSession && !draftCharacterId && (
                     <div className="flex flex-col items-center justify-center h-full text-white/30 space-y-6">
                         <div className="p-6 rounded-full glass-capsule"><Icons.Scan /></div>
@@ -1219,9 +1242,9 @@ const App = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="absolute bottom-6 left-4 right-4 z-30 md:left-0 md:right-0 md:px-0">
+            <div className="absolute bottom-6 left-4 right-4 z-30 md:left-0 md:right-0 md:px-6 pointer-events-none">
                 <div 
-                    className="max-w-4xl mx-auto flex items-center gap-2 glass-capsule p-2 rounded-full transition-all duration-500 ease-out hover:border-white/20"
+                    className="max-w-4xl mx-auto flex items-center gap-2 glass-capsule p-2 rounded-full transition-all duration-500 ease-out hover:border-white/20 pointer-events-auto"
                     style={{
                         boxShadow: isInputFocused ? `0 0 40px -10px ${themeColor}30` : '0 10px 30px -10px rgba(0,0,0,0.5)',
                         borderColor: isInputFocused ? `${themeColor}50` : 'rgba(255,255,255,0.1)',

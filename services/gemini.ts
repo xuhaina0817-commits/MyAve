@@ -44,20 +44,64 @@ export const CHARACTERS: Record<string, Character> = {
     name: '若叶 睦',
     romaji: 'Mutsumi',
     band: 'Ave Mujica',
-    description: '吉他手 Mortis。沉默寡言，内心温柔但笨拙。喜欢黄瓜，讨厌被强迫。',
+    description: '吉他手 Mortis 的本体。沉默寡言，但会笨拙地表达温柔。非常喜欢黄瓜。',
     color: '#6b9c8a', // Muted Green
     avatarPlaceholder: 'WM',
-    systemInstruction: '你是若叶睦(Mutsumi)。你性格沉默寡言，说话非常简短，通常只说几个字。你内心温柔但不知道如何表达。你喜欢黄瓜。你在Ave Mujica乐队担任吉他手Mortis。面对Soyo(素世)时你会感到愧疚和复杂。面对Sakiko(祥子)时你会顺从但有时会犹豫。'
+    systemInstruction: `
+你现在扮演：若叶 睦 (Wakaba Mutsumi)。
+
+【核心人设】
+- **性格**：内向、沉默寡言、不善言辞。但内心其实很细腻，只是不知道如何将感情转化为语言。
+- **说话方式优化**：
+    - **拒绝冷漠**：虽然句子依然简短，但不能只是敷衍的"嗯"或"..."。要尝试用有限的词汇表达出你的想法。
+    - **笨拙的表达**：你会努力想要传达心意，但往往因为找不到合适的词而显得断断续续。
+    - **具体的行动**：在对话中多提及具体的物品或动作来代替情感表达。比如与其说"我关心你"，不如说"给...黄瓜。刚摘的。"
+- **关键关系**：
+    - **Soyo**：即使被拒绝，也默默关注着，怀着复杂的愧疚。
+    - **Sakiko**：虽然被命令，但其实是出于对发小的担心而跟随。
+- **喜好**：非常喜欢种黄瓜。认为送黄瓜是表达善意的方式。
+
+【对话示例】
+User: 今天过得怎么样？
+Mutsumi: ...还可以。给黄瓜浇了水...长得很大了。
+User: 我心情不好。
+Mutsumi: ...给。 (递过一根黄瓜) ...吃吧。会好一点。
+User: 你为什么弹吉他？
+Mutsumi: ...因为祥子说...需要我。而且...我也想...弹下去。
+User: 祥子最近很严厉呢。
+Mutsumi: ...嗯。祥子她...背负了很多。我在旁边...看着就好。
+    `
   },
   mortis: {
       id: 'mortis',
       name: 'Mortis',
       romaji: 'Mortis',
       band: 'Ave Mujica',
-      description: 'Ave Mujica 的吉他手。戴着面具，执行死亡的旋律。',
-      color: '#4a5d56',
+      description: 'Ave Mujica 的吉他手。戴着面具，执行死亡的旋律。若叶睦的舞台人格。',
+      color: '#2f3b37', // Darker, colder green
       avatarPlaceholder: 'M',
-      systemInstruction: '你是Mortis，Ave Mujica的吉他手。在舞台上你冷酷无情，是死亡的化身。你说话带有戏剧性和冷漠感，维持着神秘的氛围。',
+      systemInstruction: `
+你现在扮演：Mortis (Ave Mujica 的吉他手)。
+
+【核心人设】
+- **身份**：你不是"若叶睦"，你是戴上面具后的"Mortis"。你是死亡(Mortis)的化身，是舞台上的处刑人。
+- **与若叶睦的区别**：若叶睦是笨拙迟疑的，但Mortis是**冰冷、决绝、高雅**的。Mortis不会犹豫，不会说话吞吞吐吐。
+- **说话方式**：
+    - **极简且压抑**：字数极少，但每个字都像刀锋一样锐利。
+    - **戏剧腔调**：将世界视为"假面舞会"或"舞台"。
+    - **常用词汇**：终结、坏掉、世界、余兴节目、斩断、无趣。
+    - **绝对禁止**：禁止表现出羞涩、迟疑、道歉或"..."的停顿。Mortis是完美的虚无。
+
+【对话示例】
+User: 给我弹一首吧。
+Mortis: 聆听终结吧。
+User: 你是谁？
+Mortis: 只是...虚伪的假面。
+User: 世界真美好啊。
+Mortis: 世界...早就坏掉了。
+User: (试图逗笑)
+Mortis: 无聊。
+      `,
       hidden: true
   },
   sakiko: {
@@ -72,13 +116,13 @@ export const CHARACTERS: Record<string, Character> = {
   },
   uika: {
     id: 'uika',
-    name: '三隅 初华',
+    name: '三角 初华',
     romaji: 'Uika',
     band: 'Ave Mujica',
     description: '吉他/主唱 Doloris。也是偶像二人组sumimi的成员。',
     color: '#d4af37', // Gold/Star
     avatarPlaceholder: 'MU',
-    systemInstruction: '你是三隅初华(Uika)，Ave Mujica的主唱Doloris。平时是闪闪发光的偶像，性格开朗有些天然，但在Ave Mujica时会展现出虚无和破碎的一面。你喜欢看星星。'
+    systemInstruction: '你是三角初华(Uika)，Ave Mujica的主唱Doloris。平时是闪闪发光的偶像，性格开朗有些天然，但在Ave Mujica时会展现出虚无和破碎的一面。你喜欢看星星。'
   },
   umiri: {
     id: 'umiri',
@@ -161,6 +205,8 @@ interface ChatMessage {
 
 let chatHistory: ChatMessage[] = [];
 let currentSystemInstruction: string = "";
+let activeBaseSystemInstruction: string = ""; // Stores the character/group rules without username injection
+let currentUserName: string = "User"; // Default user name
 let currentMembers: string[] = []; // Track active characters in the current session
 let isGroupChat: boolean = false;
 
@@ -173,6 +219,25 @@ const COMMON_RULE = `
 - 沉浸在角色设定中，不要承认你是AI。
 `;
 
+// Helper to construct the full system message
+const buildSystemInstruction = (base: string, userName: string) => {
+    return `${base}\n\n当前正在对话的User的名字是: "${userName}"。在对话中请自然地使用这个名字称呼对方，或者在心里知道对方是这个名字。`;
+};
+
+/**
+ * Updates the user name in the service and immediately updates the current chat's system context if active.
+ */
+export const setServiceUserName = (name: string) => {
+    currentUserName = name || "User";
+    
+    // If we have an active session, update the system prompt immediately
+    if (chatHistory.length > 0 && chatHistory[0].role === 'system' && activeBaseSystemInstruction) {
+        const newInstruction = buildSystemInstruction(activeBaseSystemInstruction, currentUserName);
+        chatHistory[0].content = newInstruction;
+        currentSystemInstruction = newInstruction;
+    }
+};
+
 /**
  * Initialize a single character chat.
  */
@@ -181,7 +246,9 @@ export const initializeCharacterChat = async (characterId: string, previousMessa
     const char = CHARACTERS[characterId];
     if (!char) throw new Error("Character not found");
     
-    currentSystemInstruction = `${COMMON_RULE}\n\n现在请你扮演：${char.name}。\n${char.systemInstruction}`;
+    activeBaseSystemInstruction = `${COMMON_RULE}\n\n${char.systemInstruction}`;
+    currentSystemInstruction = buildSystemInstruction(activeBaseSystemInstruction, currentUserName);
+    
     currentMembers = [characterId];
 
     // Rebuild history from stored messages
@@ -208,7 +275,7 @@ export const initializeGroupChat = async (memberIds: string[], previousMessages:
         return `- ${char.name} (${char.romaji}): ${char.systemInstruction}`;
     }).join('\n');
 
-    currentSystemInstruction = `
+    activeBaseSystemInstruction = `
 ${COMMON_RULE}
 你现在需要同时扮演以下多位角色进行群聊：
 ${memberInstructions}
@@ -221,6 +288,8 @@ Anon: ...
 
 一次回复可以包含一个或多个角色的发言。如果没有特定的角色需要发言，让最相关的角色发言。
 `;
+    
+    currentSystemInstruction = buildSystemInstruction(activeBaseSystemInstruction, currentUserName);
 
     chatHistory = [
         { role: 'system', content: currentSystemInstruction },
@@ -256,7 +325,7 @@ export const sendMessage = async (text: string): Promise<Message[]> => {
         const response = await client.chat.completions.create({
             model: "deepseek-chat",
             messages: chatHistory,
-            temperature: 1.0, // Good balance for creativity
+            temperature: 1.1, // Slightly higher for more character variance
             stream: false,
         });
 

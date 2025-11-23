@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, initializeCharacterChat, initializeGroupChat, sendMessage } from './services/gemini';
 import { Message, Sender, Session, Character } from './types';
@@ -253,11 +254,6 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
                 <p className="text-[10px] md:text-xs font-sans tracking-[0.2em] uppercase opacity-70 truncate flex items-center gap-2" style={{ color: themeColor, textShadow: `0 0 10px ${themeColor}40` }}>{subtitle}</p>
              </div>
           </div>
-       </div>
-       <div className="flex items-center gap-3">
-           <button className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors">
-               <Icons.Info />
-           </button>
        </div>
     </div>
   );
@@ -1135,7 +1131,7 @@ const App = () => {
              />
         </div>
 
-        <div className="flex-1 flex flex-col relative md:ml-80 h-full w-full p-4">
+        <div className="flex-1 flex flex-col relative md:ml-80 h-full w-full md:w-[calc(100%-20rem)] p-4">
             <ChatHeader 
                 character={activeCharacter || null} 
                 session={currentSession}

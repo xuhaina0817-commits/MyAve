@@ -261,8 +261,6 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
 };
 
 // --- Interactive Widgets (Refined Layout) ---
-// ... (Widgets logic remains unchanged, omitted for brevity but included in output if file rewritten, here we just show changed parts in full XML if needed, but per instruction I replace full file content)
-// To keep content concise and correct I will include the full widgets code in the final output block.
 
 const WidgetWrapper = ({ color, title, children }: { color: string, title: string, children?: React.ReactNode }) => (
     <div className="mt-6 p-5 rounded-[2rem] glass-capsule relative overflow-hidden group select-none transition-colors duration-500 hover:border-white/20 flex flex-col min-h-[140px]" 
@@ -372,25 +370,6 @@ const AnonSocial = ({ color }: { color: string }) => {
                  {hearts.map(h => (
                      <span key={h.id} className="absolute text-pink-500 animate-float-up-fade pointer-events-none text-xl" style={{ left: h.x, top: h.y }}>♥</span>
                  ))}
-            </div>
-        </WidgetWrapper>
-    );
-};
-
-const MortisGuitar = ({ color }: { color: string }) => {
-    const [strum, setStrum] = useState(false);
-    const handleClick = () => {
-        setStrum(true);
-        setTimeout(() => setStrum(false), 200);
-    };
-    return (
-        <WidgetWrapper color={color} title="Seven-String">
-            <div onClick={handleClick} className={`w-full h-full flex items-center justify-center relative cursor-pointer ${strum ? 'animate-shake' : ''}`}>
-                <div className={`w-16 h-16 transition-colors relative z-10 filter drop-shadow-lg ${strum ? 'text-red-600' : 'text-white/80 hover:text-white'}`}>
-                    <Icons.Guitar />
-                </div>
-                {strum && <div className="absolute inset-0 bg-red-500/10 animate-slash pointer-events-none rounded-xl"></div>}
-                <span className={`absolute bottom-0 text-[10px] font-serif z-10 transition-colors ${strum ? 'text-red-500' : 'text-transparent'}`}>DIE</span>
             </div>
         </WidgetWrapper>
     );
@@ -544,7 +523,6 @@ const NyamuStream = ({ color }: { color: string }) => {
 const CharacterSpecialFeature = ({ charId, color }: { charId: string, color: string }) => {
     switch (charId) {
         case 'mutsumi': return <MutsumiGarden color={color} />;
-        case 'mortis': return <MortisGuitar color={color} />;
         case 'tomori': return <TomoriCollection color={color} />;
         case 'anon': return <AnonSocial color={color} />;
         case 'rana': return <RanaParfait color={color} />;
@@ -595,40 +573,12 @@ const Sidebar = ({
     if (!acc[char.band]) acc[char.band] = []; acc[char.band].push(char); return acc;
   }, {} as Record<string, Character[]>);
 
-  const clickCountRef = useRef(0);
-  const [shake, setShake] = useState(false);
-
-  const handleAvatarClick = () => {
-      if (activeCharacterId === 'mutsumi') {
-          clickCountRef.current += 1;
-          if (clickCountRef.current >= 10) {
-              setShake(true);
-              setTimeout(() => {
-                  onSelectCharacter('mortis');
-                  setShake(false);
-                  clickCountRef.current = 0;
-              }, 500);
-          }
-      } else if (activeCharacterId === 'mortis') {
-           clickCountRef.current += 1;
-           if (clickCountRef.current >= 10) {
-              setShake(true);
-              setTimeout(() => {
-                  onSelectCharacter('mutsumi');
-                  setShake(false);
-                  clickCountRef.current = 0;
-              }, 500);
-           }
-      }
-  };
-
   return (
     <div className="flex flex-col h-full p-6 text-gray-200 overflow-y-auto custom-scrollbar relative z-10 pb-24">
       <div className="flex flex-col items-center pt-2 mb-8">
          <div className="relative group">
              <div 
-                onClick={handleAvatarClick}
-                className={`w-28 h-28 rounded-full p-1.5 relative shadow-2xl transition-all duration-700 cursor-pointer ${shake ? 'animate-shake' : 'hover:scale-105'}`}
+                className={`w-28 h-28 rounded-full p-1.5 relative shadow-2xl transition-all duration-700 cursor-pointer hover:scale-105`}
                 style={{ background: `linear-gradient(135deg, ${activeCharacter ? activeCharacter.color : GROUP_THEME_COLOR}20, transparent)` }}
              >
                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center glass-capsule border border-white/20">

@@ -234,7 +234,7 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
 
   return (
     <div 
-      className="absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-4 h-16 z-30 flex items-center justify-between px-6 rounded-[2rem] glass-panel transition-all duration-500 shadow-xl"
+      className="absolute top-4 left-4 right-4 md:top-6 md:left-6 md:right-6 h-16 z-30 flex items-center justify-between px-6 rounded-[2rem] glass-panel transition-all duration-500 shadow-xl"
       style={{ border: `1px solid ${themeColor}20` }}
     >
        <div className="flex items-center gap-4 overflow-hidden">
@@ -261,6 +261,8 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
 };
 
 // --- Interactive Widgets (Refined Layout) ---
+// ... (Widgets logic remains unchanged, omitted for brevity but included in output if file rewritten, here we just show changed parts in full XML if needed, but per instruction I replace full file content)
+// To keep content concise and correct I will include the full widgets code in the final output block.
 
 const WidgetWrapper = ({ color, title, children }: { color: string, title: string, children?: React.ReactNode }) => (
     <div className="mt-6 p-5 rounded-[2rem] glass-capsule relative overflow-hidden group select-none transition-colors duration-500 hover:border-white/20 flex flex-col min-h-[140px]" 
@@ -1131,12 +1133,12 @@ const App = () => {
 
         {isSidebarOpen && (
             <div 
-                className="fixed inset-0 z-30 bg-black/60 backdrop-blur-md md:hidden animate-fade-in"
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md md:hidden animate-fade-in"
                 onClick={() => setIsSidebarOpen(false)}
             />
         )}
 
-        <div className={`fixed inset-y-4 left-4 z-40 w-72 glass-panel rounded-[2.5rem] transform transition-transform duration-500 border border-white/5 shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[120%] md:translate-x-0'}`}>
+        <div className={`fixed inset-y-4 left-4 z-50 w-72 glass-panel rounded-[2.5rem] transform transition-transform duration-500 border border-white/5 shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[120%] md:translate-x-0'} md:top-6 md:left-6 md:bottom-6`}>
              <Sidebar 
                 activeCharacterId={activeCharacterId || null}
                 onSelectCharacter={handleSelectCharacter}
@@ -1162,7 +1164,7 @@ const App = () => {
                 charAvatars={charAvatars}
             />
             
-            <div className="flex-1 overflow-y-auto px-4 py-24 custom-scrollbar space-y-8 mask-gradient relative z-10" onClick={() => setIsSidebarOpen(false)}>
+            <div className="flex-1 overflow-y-auto px-4 pt-32 pb-36 custom-scrollbar space-y-8 mask-gradient relative z-10" onClick={() => setIsSidebarOpen(false)}>
                 {!currentSession && !draftCharacterId && (
                     <div className="flex flex-col items-center justify-center h-full text-white/30 space-y-6">
                         <div className="p-6 rounded-full glass-capsule"><Icons.Scan /></div>

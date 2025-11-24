@@ -1037,24 +1037,24 @@ const App = () => {
   };
 
   const handleDeleteSession = (id: string) => {
-      setSessions(prev => {
-          const filtered = prev.filter(s => s.id !== id);
-          // If we just deleted the current session
-          if (currentSessionId === id) {
-              if (filtered.length > 0) {
-                  // We can't easily trigger the async init here, so we just set the ID to the first available
-                  // The effect or next user action will handle specifics, or we default to draft
-                  // Ideally we should switch to the first one.
-                  // For now, let's go back to default draft to be safe.
-                  setCurrentSessionId(null);
-                  setDraftCharacterId('mutsumi');
-              } else {
-                 setCurrentSessionId(null);
-                 setDraftCharacterId('mutsumi');
-              }
+      // Optimistically update sessions list
+      const updatedSessions = sessions.filter(s => s.id !== id);
+      setSessions(updatedSessions);
+
+      // If the deleted session was the current one, we need to switch context
+      if (currentSessionId === id) {
+          // Try to go to the most recent remaining session
+          if (updatedSessions.length > 0) {
+              const nextSession = updatedSessions[0];
+              handleSelectSession(nextSession);
+          } else {
+              // No sessions left, reset to default draft and RE-INITIALIZE chat service
+              // This is critical to ensure the service forgets any previous group chat context
+              setCurrentSessionId(null);
+              setDraftCharacterId('mutsumi');
+              initializeCharacterChat('mutsumi', []);
           }
-          return filtered;
-      });
+      }
   };
   
   const handleUserAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1171,7 +1171,6 @@ const App = () => {
                                         : { boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)` }
                                     }
                                  >
-                                     {/* Removed image rendering logic for chat messages */}
                                      {msg.text}
                                  </div>
                                  <span className="text-[9px] opacity-40 px-2 font-sans tracking-wide">

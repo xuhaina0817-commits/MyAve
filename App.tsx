@@ -706,7 +706,7 @@ const Sidebar = ({
       </div>
 
       <div className="p-6 pt-4 shrink-0 bg-black/20 backdrop-blur-md border-t border-white/5 z-20">
-           <a href="https://b23.tv/5v3enDD" target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/30 hover:text-white/60 transition-colors block mb-4 tracking-wide font-serif italic text-center">
+           <a href="https://b23.tv/5v3enDD" target="_blank" rel="noopener noreferrer" className="text-xs md:text-sm text-white/40 hover:text-white/70 transition-colors block mb-4 tracking-wide font-serif italic text-center">
                Bilibili @-Alisss-
            </a>
            <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-3 rounded-2xl transition-colors group" onClick={onUploadUserAvatar}>

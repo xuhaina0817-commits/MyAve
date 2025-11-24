@@ -234,7 +234,7 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
 
   return (
     <div 
-      className="absolute top-4 left-4 right-4 md:top-6 md:left-6 md:right-6 h-16 z-30 flex items-center justify-between px-6 rounded-[2rem] glass-panel transition-all duration-500 shadow-xl"
+      className="absolute top-28 left-4 right-4 md:top-14 md:left-6 md:right-6 h-16 z-30 flex items-center justify-between px-6 rounded-[2rem] glass-panel transition-all duration-500 shadow-xl"
       style={{ border: `1px solid ${themeColor}20` }}
     >
        <div className="flex items-center gap-4 overflow-hidden">
@@ -574,9 +574,10 @@ const Sidebar = ({
   }, {} as Record<string, Character[]>);
 
   return (
-    <div className="flex flex-col h-full p-6 text-gray-200 overflow-y-auto custom-scrollbar relative z-10 pb-24">
-      <div className="flex flex-col items-center pt-2 mb-8">
-         <div className="relative group">
+    <div className="flex flex-col h-full text-gray-200 relative z-10 rounded-[2.5rem] overflow-hidden">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+        <div className="flex flex-col items-center pt-2 mb-8">
+           <div className="relative group">
              <div 
                 className={`w-28 h-28 rounded-full p-1.5 relative shadow-2xl transition-all duration-700 cursor-pointer hover:scale-105`}
                 style={{ background: `linear-gradient(135deg, ${activeCharacter ? activeCharacter.color : GROUP_THEME_COLOR}20, transparent)` }}
@@ -744,12 +745,13 @@ const Sidebar = ({
             })}
         </div>
       </div>
+      </div>
 
-      <div className="mt-auto pt-6 text-center">
-           <a href="https://b23.tv/5v3enDD" target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/30 hover:text-white/60 transition-colors block mb-4 tracking-wide font-serif italic">
+      <div className="p-6 pt-4 shrink-0 bg-black/20 backdrop-blur-md border-t border-white/5 z-20">
+           <a href="https://b23.tv/5v3enDD" target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/30 hover:text-white/60 transition-colors block mb-4 tracking-wide font-serif italic text-center">
                Bilibili @-Alisss-
            </a>
-           <div className="pt-3 border-t border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 p-3 rounded-2xl transition-colors group" onClick={onUploadUserAvatar}>
+           <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-3 rounded-2xl transition-colors group" onClick={onUploadUserAvatar}>
                <div className="flex items-center gap-3 w-full">
                    <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-white/30 transition-colors shrink-0">
                        {userAvatar ? <img src={userAvatar} alt="Me" className="w-full h-full object-cover" /> : <Icons.User />}
@@ -1088,7 +1090,7 @@ const App = () => {
             />
         )}
 
-        <div className={`fixed inset-y-4 left-4 z-50 w-72 glass-panel rounded-[2.5rem] transform transition-transform duration-500 border border-white/5 shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[120%] md:translate-x-0'} md:top-6 md:left-6 md:bottom-6`}>
+        <div className={`fixed top-28 bottom-4 left-4 z-50 w-72 glass-panel rounded-[2.5rem] transform transition-transform duration-500 border border-white/5 shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[120%] md:translate-x-0'} md:top-14 md:left-6 md:bottom-6`}>
              <Sidebar 
                 activeCharacterId={activeCharacterId || null}
                 onSelectCharacter={handleSelectCharacter}
@@ -1114,7 +1116,7 @@ const App = () => {
                 charAvatars={charAvatars}
             />
             
-            <div className="flex-1 overflow-y-auto px-4 pt-32 pb-36 custom-scrollbar space-y-8 mask-gradient relative z-10" onClick={() => setIsSidebarOpen(false)}>
+            <div className="flex-1 overflow-y-auto px-4 pt-60 pb-36 custom-scrollbar space-y-8 mask-gradient relative z-10" onClick={() => setIsSidebarOpen(false)}>
                 {!currentSession && !draftCharacterId && (
                     <div className="flex flex-col items-center justify-center h-full text-white/30 space-y-6">
                         <div className="p-6 rounded-full glass-capsule"><Icons.Scan /></div>
@@ -1196,44 +1198,47 @@ const App = () => {
 
             <div className="absolute bottom-6 left-4 right-4 z-30 md:left-0 md:right-0 md:px-6 pointer-events-none">
                 <div 
-                    className="max-w-4xl mx-auto flex items-center gap-2 glass-capsule p-2 rounded-full transition-all duration-500 ease-out hover:border-white/20 pointer-events-auto"
-                    style={{
-                        boxShadow: isInputFocused ? `0 0 40px -10px ${themeColor}30` : '0 10px 30px -10px rgba(0,0,0,0.5)',
-                        borderColor: isInputFocused ? `${themeColor}50` : 'rgba(255,255,255,0.1)',
+                    className={`max-w-4xl mx-auto flex items-center gap-2 glass-capsule p-2 rounded-full transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) bg-black/40 pointer-events-auto relative shadow-2xl backdrop-blur-xl border ${isInputFocused ? 'translate-y-[-2px]' : ''}`}
+                    style={{ 
+                        borderColor: isInputFocused ? `${themeColor}60` : `${themeColor}20`,
+                        boxShadow: isInputFocused ? `0 10px 30px -5px ${themeColor}30, inset 0 0 20px ${themeColor}10` : `0 5px 20px -5px rgba(0,0,0,0.3)`
                     }}
                 >
-                    <input
+                    <button 
+                        className="p-3 text-white/50 hover:text-white transition-colors rounded-full hover:bg-white/10"
+                        title="Upload Image (Coming Soon)"
+                    >
+                         <Icons.Plus />
+                    </button>
+                    <input 
+                        className="flex-1 bg-transparent border-none outline-none text-white placeholder-white/30 px-2 font-sans tracking-wide text-sm h-full py-2"
+                        placeholder={`Message ${activeCharacter?.name || '...'}`}
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                         onFocus={() => setIsInputFocused(true)}
                         onBlur={() => setIsInputFocused(false)}
-                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                        placeholder={activeCharacter ? `Message ${activeCharacter.name}...` : "Type a message..."}
-                        className="flex-1 bg-transparent border-none focus:ring-0 text-base placeholder-white/30 text-white px-4 outline-none font-sans h-12"
-                        disabled={isSending || (!currentSessionId && !draftCharacterId)}
                     />
-
                     <button 
                         onClick={handleSendMessage}
-                        disabled={(!inputText.trim() && !isSending) || (!currentSessionId && !draftCharacterId)}
-                        className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-500 shadow-lg ${inputText.trim() ? 'text-black scale-100 rotate-0' : 'bg-white/5 text-white/20 cursor-not-allowed scale-90 rotate-90'}`}
-                        style={inputText.trim() && activeCharacter ? { backgroundColor: activeCharacter.color, color: '#fff', boxShadow: `0 0 20px ${activeCharacter.color}60` } : {}}
+                        disabled={!inputText.trim() && !isSending}
+                        className="p-3 rounded-full transition-all duration-300 transform active:scale-90 hover:shadow-[0_0_15px_currentColor]"
+                        style={{ 
+                            backgroundColor: inputText.trim() ? themeColor : 'rgba(255,255,255,0.1)', 
+                            color: inputText.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+                            cursor: inputText.trim() ? 'pointer' : 'default'
+                        }}
                     >
-                        <Icons.Send />
+                         <Icons.Send />
                     </button>
                 </div>
             </div>
+            
+            {showGroupModal && <GroupCreateModal onClose={() => setShowGroupModal(false)} onCreate={handleCreateGroup} />}
+            
+            <input type="file" ref={userAvatarInputRef} onChange={handleUserAvatarUpload} className="hidden" accept="image/*" />
+            <input type="file" ref={charAvatarInputRef} onChange={handleCharAvatarUpload} className="hidden" accept="image/*" />
         </div>
-
-        {showGroupModal && (
-            <GroupCreateModal 
-                onClose={() => setShowGroupModal(false)} 
-                onCreate={handleCreateGroup}
-            />
-        )}
-        
-        <input type="file" ref={userAvatarInputRef} className="hidden" accept="image/*" onChange={handleUserAvatarUpload} />
-        <input type="file" ref={charAvatarInputRef} className="hidden" accept="image/*" onChange={handleCharAvatarUpload} />
     </div>
   );
 };

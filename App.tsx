@@ -1204,14 +1204,8 @@ const App = () => {
                         boxShadow: isInputFocused ? `0 10px 30px -5px ${themeColor}30, inset 0 0 20px ${themeColor}10` : `0 5px 20px -5px rgba(0,0,0,0.3)`
                     }}
                 >
-                    <button 
-                        className="p-3 text-white/50 hover:text-white transition-colors rounded-full hover:bg-white/10"
-                        title="Upload Image (Coming Soon)"
-                    >
-                         <Icons.Plus />
-                    </button>
                     <input 
-                        className="flex-1 bg-transparent border-none outline-none text-white placeholder-white/30 px-2 font-sans tracking-wide text-sm h-full py-2"
+                        className="flex-1 bg-transparent border-none outline-none text-white placeholder-white/30 px-4 font-sans tracking-wide text-sm h-full py-2"
                         placeholder={`Message ${activeCharacter?.name || '...'}`}
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}

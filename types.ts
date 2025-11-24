@@ -34,9 +34,8 @@ export interface Character {
 
 export interface Session {
   id: string;
-  type: 'single' | 'group';
-  characterId?: string; // For single chat
-  members?: string[];   // For group chat (list of character IDs)
+  type: 'single';
+  characterId: string; // Mandatory for single chat
   title: string;
   lastModified: number;
   messages: Message[];

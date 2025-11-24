@@ -1,3 +1,4 @@
+
 import OpenAI from 'openai';
 import { Message, Sender, Character } from "../types";
 
@@ -174,6 +175,31 @@ export const CHARACTERS: Record<string, Character> = {
   }
 };
 
+// --- Utilities ---
+
+// Robustly identify a character from a name string (fuzzy matching)
+export const resolveCharacter = (nameInput: string): Character | undefined => {
+    // Remove brackets, parenthesis, markdown bold/italic symbols, and trim
+    const n = nameInput.replace(/[\[\]\(\)\*\_]/g, '').trim().toLowerCase();
+    
+    return Object.values(CHARACTERS).find(c => {
+        const cRomaji = c.romaji.toLowerCase();
+        const cName = c.name.toLowerCase();
+        
+        // 1. Exact Match
+        if (n === cRomaji || n === cName) return true;
+        
+        // 2. Containment (e.g. "Tomori Takamatsu" contains "Tomori", or "[Tomori]" (cleaned) contains "Tomori")
+        // We check if the input name contains the character's known name/romaji
+        if (n.includes(cRomaji) || n.includes(cName)) return true;
+        
+        // 3. Reverse Containment (Rare, but if char name is "Mutsumi Wakaba" and input is "Mutsumi")
+        if (cName.includes(n) && n.length > 1) return true;
+        
+        return false;
+    });
+};
+
 // --- State Management ---
 let conversationHistory: { role: 'system' | 'user' | 'assistant', content: string }[] = [];
 let currentSystemInstruction = "";
@@ -194,25 +220,6 @@ export const initializeCharacterChat = async (characterId: string, history: Mess
         currentSystemInstruction = char.systemInstruction;
         conversationHistory = history.map(mapMessageToOpenAI) as any;
     }
-};
-
-export const initializeGroupChat = async (memberIds: string[], history: Message[]) => {
-    const members = memberIds.map(id => CHARACTERS[id]).filter(Boolean);
-    const names = members.map(m => m.name).join(', ');
-    currentSystemInstruction = `You are roleplaying a group chat with: ${names}.
-    ${COMMON_RULES}
-    Context: The user (${currentUserName}) is chatting with the group.
-    
-    IMPORTANT: You must format your response as follows for each character speaking:
-    [Character Name]: [Dialogue]
-    
-    Example:
-    Tomori: Hello everyone.
-    Anon: Hi Tomori!
-    
-    If multiple characters speak, separate them with newlines.
-    `;
-    conversationHistory = history.map(mapMessageToOpenAI) as any;
 };
 
 export const sendMessage = async (text: string): Promise<Message[]> => {
@@ -241,55 +248,12 @@ export const sendMessage = async (text: string): Promise<Message[]> => {
         const reply = response.choices[0]?.message?.content || "";
         conversationHistory.push({ role: 'assistant', content: reply });
 
-        // Parse Response
-        const isGroup = currentSystemInstruction.includes("group chat");
-        if (!isGroup) {
-            return [{
-                id: Date.now().toString(),
-                text: reply,
-                sender: Sender.CHARACTER,
-                timestamp: new Date()
-            }];
-        } else {
-             const lines = reply.split('\n').filter(l => l.trim());
-             const messages: Message[] = [];
-             for (const line of lines) {
-                 const match = line.match(/^([^:：]+)[:：](.*)/);
-                 if (match) {
-                     const name = match[1].trim();
-                     const content = match[2].trim();
-                     // Improved character matching
-                     const char = Object.values(CHARACTERS).find(c => 
-                        c.name === name || 
-                        c.romaji.toLowerCase() === name.toLowerCase() || 
-                        c.name.includes(name) ||
-                        name.includes(c.name)
-                     );
-                     
-                     messages.push({
-                         id: Date.now().toString() + Math.random(),
-                         text: content,
-                         sender: Sender.CHARACTER,
-                         timestamp: new Date(),
-                         characterId: char?.id
-                     });
-                 } else {
-                      // Fallback for unformatted lines in group
-                      messages.push({
-                         id: Date.now().toString() + Math.random(),
-                         text: line,
-                         sender: Sender.CHARACTER,
-                         timestamp: new Date()
-                      });
-                 }
-             }
-             return messages.length ? messages : [{
-                 id: Date.now().toString(),
-                 text: reply,
-                 sender: Sender.CHARACTER,
-                 timestamp: new Date()
-             }];
-        }
+        return [{
+            id: Date.now().toString(),
+            text: reply,
+            sender: Sender.CHARACTER,
+            timestamp: new Date()
+        }];
 
     } catch (error) {
         console.error("Chat error", error);

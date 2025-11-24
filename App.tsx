@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { CHARACTERS, initializeCharacterChat, initializeGroupChat, sendMessage, setServiceUserName } from './services/gemini';
+import { CHARACTERS, initializeCharacterChat, sendMessage, setServiceUserName, resolveCharacter } from './services/gemini';
 import { Message, Sender, Session, Character } from './types';
 
 // --- Constants ---
@@ -7,7 +8,6 @@ const STORAGE_KEY = 'mutsumi_chat_sessions_v4';
 const USER_AVATAR_KEY = 'user_avatar_global';
 const USER_NAME_KEY = 'user_name_global';
 const CHAR_AVATAR_KEY = 'char_avatars_map';
-const GROUP_THEME_COLOR = '#6b4c9a'; // Starlight Purple for groups
 
 // --- Icons ---
 const Icons = {
@@ -227,10 +227,9 @@ const Avatar = ({ className = "", customSrc, character }: { className?: string, 
 };
 
 const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { character: Character | null, session: Session | undefined, onToggleSidebar: () => void, charAvatars: Record<string, string> }) => {
-  const isGroup = session?.type === 'group';
-  const themeColor = character?.color || (isGroup ? GROUP_THEME_COLOR : '#6b9c8a');
+  const themeColor = character?.color || '#6b9c8a';
   const title = character ? character.name : (session?.title || 'Chat');
-  const subtitle = character ? character.band : (isGroup ? `${session?.members?.length || 0} Members` : 'Online');
+  const subtitle = character ? character.band : 'Online';
 
   return (
     <div 
@@ -256,7 +255,6 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
              <div className="flex flex-col justify-center min-w-0">
                 <h1 className="font-serif text-lg font-bold text-white truncate leading-tight flex items-center gap-2 tracking-wide drop-shadow-md">
                    {title}
-                   {isGroup && <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 font-sans tracking-wide border border-white/10">GROUP</span>}
                 </h1>
                 <p className="text-[10px] md:text-xs font-sans tracking-[0.2em] uppercase opacity-70 truncate flex items-center gap-2" style={{ color: themeColor, textShadow: `0 0 10px ${themeColor}40` }}>{subtitle}</p>
              </div>
@@ -552,7 +550,6 @@ const Sidebar = ({
   sessions,
   currentSessionId,
   onSelectSession,
-  onCreateGroup,
   onDeleteSession,
   onUploadCharAvatar,
   charAvatars,
@@ -566,7 +563,6 @@ const Sidebar = ({
   sessions: Session[],
   currentSessionId: string | null,
   onSelectSession: (session: Session) => void,
-  onCreateGroup: () => void,
   onDeleteSession: (id: string) => void,
   onUploadCharAvatar: (id: string) => void,
   charAvatars: Record<string, string>,
@@ -586,7 +582,7 @@ const Sidebar = ({
            <div className="relative group">
              <div 
                 className={`w-28 h-28 rounded-full p-1.5 relative shadow-2xl transition-all duration-700 cursor-pointer hover:scale-105`}
-                style={{ background: `linear-gradient(135deg, ${activeCharacter ? activeCharacter.color : GROUP_THEME_COLOR}20, transparent)` }}
+                style={{ background: `linear-gradient(135deg, ${activeCharacter ? activeCharacter.color : '#666'}20, transparent)` }}
              >
                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center glass-capsule border border-white/20">
                      {activeCharacter ? (
@@ -615,7 +611,7 @@ const Sidebar = ({
              )}
          </div>
          <h2 className="mt-4 font-serif text-xl font-bold transition-colors duration-500 tracking-wide" style={{ color: activeCharacter?.color || 'white', textShadow: `0 0 20px ${activeCharacter?.color || 'white'}40` }}>
-            {activeCharacter ? activeCharacter.name : 'Group Chat'}
+            {activeCharacter ? activeCharacter.name : 'Select Character'}
          </h2>
       </div>
 
@@ -651,67 +647,23 @@ const Sidebar = ({
 
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent my-8"></div>
 
-      <div className="mb-8">
-          <div className="flex items-center justify-between mb-3 px-2">
-              <h3 className="text-[10px] font-serif uppercase tracking-widest opacity-60 transition-colors duration-500" style={{ color: GROUP_THEME_COLOR }}>Groups</h3>
-              <button onClick={onCreateGroup} className="p-1.5 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-all"><Icons.Plus /></button>
-          </div>
-          <div className="space-y-2">
-              {sessions.filter(s => s.type === 'group').sort((a, b) => b.lastModified - a.lastModified).map(s => {
-                  const isCurrent = currentSessionId === s.id;
-                  const lastMsg = s.messages.length > 0 ? s.messages[s.messages.length - 1] : null;
-                  return (
-                    <div key={s.id} className="group relative flex items-center">
-                        <button 
-                          onClick={() => onSelectSession(s)}
-                          className="w-full text-left p-3 pr-10 rounded-2xl text-xs transition-all flex items-start gap-3 relative overflow-hidden hover:bg-white/5 border border-transparent hover:border-white/5"
-                          style={isCurrent ? { backgroundColor: `${GROUP_THEME_COLOR}15`, borderColor: `${GROUP_THEME_COLOR}30`, color: 'white' } : { color: '#9ca3af' }}
-                        >
-                            <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden bg-white/5 flex items-center justify-center shadow-[0_0_5px_currentColor]" style={{ color: GROUP_THEME_COLOR }}>
-                                <Icons.Users />
-                            </div>
-                            <div className="flex-1 min-w-0 flex flex-col">
-                                <div className="flex justify-between items-baseline w-full">
-                                    <span className="truncate font-medium">{s.title}</span>
-                                    {lastMsg && <span className="text-[9px] opacity-40 ml-2 whitespace-nowrap">{new Date(lastMsg.timestamp).getHours()}:{new Date(lastMsg.timestamp).getMinutes().toString().padStart(2, '0')}</span>}
-                                </div>
-                                <span className="text-[10px] opacity-50 truncate text-left w-full mt-0.5">
-                                    {lastMsg ? lastMsg.text : '暂无消息'}
-                                </span>
-                            </div>
-                        </button>
-                        <button 
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteSession(s.id); }} 
-                            className="absolute right-2 top-3 p-2 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all z-50"
-                        >
-                            <Icons.Trash />
-                        </button>
-                    </div>
-                )
-              })}
-              {sessions.filter(s => s.type === 'group').length === 0 && (
-                  <div className="text-[10px] text-white/20 px-4 italic">No active groups</div>
-              )}
-          </div>
-      </div>
-      
       <div>
         <div className="flex items-center justify-between mb-3 px-2">
              <h3 className="text-[10px] font-serif uppercase tracking-widest opacity-60">History / 历史记录</h3>
-             {sessions.filter(s => s.type === 'single').length > 0 && (
-                 <span className="text-[9px] opacity-30">{sessions.filter(s => s.type === 'single').length} chats</span>
+             {sessions.length > 0 && (
+                 <span className="text-[9px] opacity-30">{sessions.length} chats</span>
              )}
         </div>
 
         <div className="space-y-2 px-1">
-            {sessions.filter(s => s.type === 'single').length === 0 && (
+            {sessions.length === 0 && (
                  <div className="text-[10px] text-white/20 px-2 italic py-4 text-center border border-white/5 rounded-xl">
                      No conversation history
                  </div>
             )}
 
-            {sessions.filter(s => s.type === 'single').sort((a, b) => b.lastModified - a.lastModified).map(s => {
-                const char = s.characterId ? CHARACTERS[s.characterId] : null;
+            {sessions.sort((a, b) => b.lastModified - a.lastModified).map(s => {
+                const char = CHARACTERS[s.characterId];
                 const color = char?.color || '#666';
                 const isCurrent = currentSessionId === s.id;
                 const lastMsg = s.messages.length > 0 ? s.messages[s.messages.length - 1] : null;
@@ -776,86 +728,6 @@ const Sidebar = ({
   );
 };
 
-const GroupCreateModal = ({ onClose, onCreate }: { onClose: () => void, onCreate: (members: string[], title: string) => void }) => {
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [title, setTitle] = useState("");
-  
-  const toggleMember = (id: string) => {
-    if (selectedMembers.includes(id)) {
-      setSelectedMembers(prev => prev.filter(m => m !== id));
-    } else {
-      setSelectedMembers(prev => [...prev, id]);
-    }
-  };
-
-  const handleCreate = () => {
-    if (selectedMembers.length === 0 || !title.trim()) return;
-    onCreate(selectedMembers, title);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in p-4">
-      <div className="w-full max-w-md bg-[#1a1c1b] border border-white/10 rounded-[2rem] p-6 shadow-2xl relative animate-scale-in overflow-hidden glass-panel">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-        <button onClick={onClose} className="absolute top-5 right-5 text-white/50 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full">
-          <Icons.X />
-        </button>
-        
-        <h2 className="text-xl font-serif font-bold text-white mb-8 tracking-wide">New Group</h2>
-        
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold ml-1">Group Title</label>
-            <input 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none focus:border-white/30 transition-all focus:bg-black/40 text-sm"
-              placeholder="Name your group..."
-            />
-          </div>
-          
-          <div className="space-y-3">
-            <label className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold ml-1">Select Members</label>
-            <div className="grid grid-cols-5 gap-2 max-h-[240px] overflow-y-auto custom-scrollbar pr-1 pb-1">
-              {Object.values(CHARACTERS).filter(c => !c.hidden).map(char => (
-                <button
-                  key={char.id}
-                  onClick={() => toggleMember(char.id)}
-                  className={`aspect-square rounded-xl relative overflow-hidden transition-all duration-300 border group ${selectedMembers.includes(char.id) ? 'border-white/50 opacity-100 bg-white/10' : 'border-transparent opacity-50 hover:opacity-100 hover:bg-white/5'}`}
-                  title={char.name}
-                >
-                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: `${char.color}15` }}>
-                      <span className="text-[10px] font-bold" style={{ color: char.color }}>{char.avatarPlaceholder}</span>
-                  </div>
-                  {selectedMembers.includes(char.id) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] animate-fade-in">
-                      <div className="w-5 h-5 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform scale-90">
-                        <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5" stroke="currentColor" strokeWidth={3}><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: char.color }}></div>
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-white/30 text-right px-1">{selectedMembers.length} selected</p>
-          </div>
-          
-          <button 
-            onClick={handleCreate}
-            disabled={selectedMembers.length === 0 || !title.trim()}
-            className={`w-full py-4 rounded-xl font-bold tracking-widest text-xs uppercase transition-all mt-2 relative overflow-hidden group ${selectedMembers.length > 0 && title.trim() ? 'text-white shadow-lg hover:shadow-xl hover:scale-[1.01]' : 'bg-white/5 text-white/20 cursor-not-allowed'}`}
-            style={selectedMembers.length > 0 && title.trim() ? { backgroundColor: GROUP_THEME_COLOR } : {}}
-          >
-             {selectedMembers.length > 0 && title.trim() && <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>}
-             <span className="relative z-10">Create Group Chat</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const App = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -863,7 +735,6 @@ const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [showGroupModal, setShowGroupModal] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>(() => localStorage.getItem(USER_NAME_KEY) || "User");
   const [charAvatars, setCharAvatars] = useState<Record<string, string>>({});
@@ -879,9 +750,9 @@ const App = () => {
 
   const currentSession = sessions.find(s => s.id === currentSessionId);
   // Determine active character: Draft takes precedence over null session, else session's char
-  const activeCharacterId = draftCharacterId || (currentSession?.type === 'single' ? currentSession.characterId : null);
+  const activeCharacterId = draftCharacterId || (currentSession ? currentSession.characterId : null);
   const activeCharacter = activeCharacterId ? CHARACTERS[activeCharacterId] : null;
-  const themeColor = activeCharacter?.color || (currentSession?.type === 'group' ? GROUP_THEME_COLOR : '#6b9c8a');
+  const themeColor = activeCharacter?.color || '#6b9c8a';
 
   useEffect(() => {
     const storedSessions = localStorage.getItem(STORAGE_KEY);
@@ -897,15 +768,14 @@ const App = () => {
     if (storedSessions) {
         try {
             const parsed = JSON.parse(storedSessions);
-            setSessions(parsed);
-            if (parsed.length > 0) {
-                const first = parsed[0];
+            // Filter out any old group sessions to prevent errors
+            const validSessions = parsed.filter((s: any) => s.type !== 'group');
+            setSessions(validSessions);
+            
+            if (validSessions.length > 0) {
+                const first = validSessions[0];
                 setCurrentSessionId(first.id);
-                if (first.type === 'single' && first.characterId) {
-                    initializeCharacterChat(first.characterId, first.messages);
-                } else if (first.type === 'group' && first.members) {
-                    initializeGroupChat(first.members, first.messages);
-                }
+                initializeCharacterChat(first.characterId, first.messages);
             } else {
                 // No sessions? Enter draft mode for default char
                 setDraftCharacterId('mutsumi');
@@ -1005,18 +875,14 @@ const App = () => {
       setIsSidebarOpen(false);
       
       try {
-          if (session.type === 'group' && session.members) {
-              await initializeGroupChat(session.members, session.messages);
-          } else if (session.characterId) {
-              await initializeCharacterChat(session.characterId, session.messages);
-          }
+          await initializeCharacterChat(session.characterId, session.messages);
       } catch (e) {
           console.error("Failed to switch session", e);
       }
   };
 
   const handleSelectCharacter = (charId: string) => {
-      const existing = sessions.find(s => s.type === 'single' && s.characterId === charId);
+      const existing = sessions.find(s => s.characterId === charId);
       if (existing) {
           handleSelectSession(existing);
       } else {
@@ -1026,20 +892,6 @@ const App = () => {
           setIsSidebarOpen(false);
           initializeCharacterChat(charId, []);
       }
-  };
-
-  const handleCreateGroup = (members: string[], title: string) => {
-      const newSession: Session = {
-          id: Date.now().toString(),
-          type: 'group',
-          members,
-          title,
-          lastModified: Date.now(),
-          messages: []
-      };
-      setSessions(prev => [newSession, ...prev]);
-      handleSelectSession(newSession);
-      setShowGroupModal(false);
   };
 
   const handleDeleteSession = (id: string) => {
@@ -1055,7 +907,6 @@ const App = () => {
               handleSelectSession(nextSession);
           } else {
               // No sessions left, reset to default draft and RE-INITIALIZE chat service
-              // This is critical to ensure the service forgets any previous group chat context
               setCurrentSessionId(null);
               setDraftCharacterId('mutsumi');
               initializeCharacterChat('mutsumi', []);
@@ -1105,7 +956,6 @@ const App = () => {
                 sessions={sessions}
                 currentSessionId={currentSessionId}
                 onSelectSession={handleSelectSession}
-                onCreateGroup={() => setShowGroupModal(true)}
                 onDeleteSession={handleDeleteSession}
                 onUploadCharAvatar={(id) => { setTempCharIdForAvatar(id); charAvatarInputRef.current?.click(); }}
                 charAvatars={charAvatars}
@@ -1145,29 +995,9 @@ const App = () => {
 
                 {displayMessages.map((msg, idx) => {
                     const isUser = msg.sender === Sender.USER;
-                    
-                    // Logic to resolve character for group chats if ID is missing (historical data fix)
-                    let msgChar = !isUser && msg.characterId ? CHARACTERS[msg.characterId] : activeCharacter;
-                    let displayText = msg.text;
+                    const msgChar = activeCharacter; 
 
-                    if (!isUser && !msgChar && currentSession?.type === 'group') {
-                         // Attempt to parse "Name: Message" format for fallback display
-                         const match = displayText.match(/^([^:：]+)[:：](.*)/);
-                         if (match) {
-                             const name = match[1].trim();
-                             const foundChar = Object.values(CHARACTERS).find(c => 
-                                c.name === name || 
-                                c.romaji.toLowerCase() === name.toLowerCase() || 
-                                c.name.includes(name)
-                             );
-                             if (foundChar) {
-                                 msgChar = foundChar;
-                                 displayText = match[2].trim();
-                             }
-                         }
-                    }
-
-                    const showAvatar = !isUser && (idx === 0 || displayMessages[idx-1].sender === Sender.USER || (displayMessages[idx-1].characterId !== msg.characterId && displayMessages[idx-1].characterId !== msgChar?.id));
+                    const showAvatar = !isUser && (idx === 0 || displayMessages[idx-1].sender === Sender.USER);
 
                     return (
                         <div key={msg.id} className={`flex items-end gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'} animate-fade-in-up`}>
@@ -1182,9 +1012,6 @@ const App = () => {
                              </div>
 
                              <div className={`max-w-[75%] md:max-w-[65%] space-y-1.5 ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
-                                 {!isUser && showAvatar && currentSession?.type === 'group' && (
-                                     <span className="text-[10px] opacity-60 ml-2 tracking-wide font-bold" style={{ color: msgChar?.color }}>{msgChar?.name}</span>
-                                 )}
                                  
                                  <div 
                                     className={`px-6 py-4 rounded-[1.5rem] text-[15px] leading-relaxed shadow-lg backdrop-blur-md border
@@ -1198,7 +1025,7 @@ const App = () => {
                                         : { boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)` }
                                     }
                                  >
-                                     {displayText}
+                                     {msg.text}
                                  </div>
                                  <span className="text-[9px] opacity-40 px-2 font-sans tracking-wide">
                                      {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -1253,8 +1080,6 @@ const App = () => {
                     </button>
                 </div>
             </div>
-            
-            {showGroupModal && <GroupCreateModal onClose={() => setShowGroupModal(false)} onCreate={handleCreateGroup} />}
             
             <input type="file" ref={userAvatarInputRef} onChange={handleUserAvatarUpload} className="hidden" accept="image/*" />
             <input type="file" ref={charAvatarInputRef} onChange={handleCharAvatarUpload} className="hidden" accept="image/*" />

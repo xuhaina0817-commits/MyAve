@@ -244,7 +244,13 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
           
           <div className="flex items-center gap-4 overflow-hidden">
              <div className="relative shrink-0">
-               <Avatar character={character || undefined} customSrc={character ? charAvatars[character.id] : undefined} className="w-10 h-10" />
+               {character ? (
+                   <Avatar character={character} customSrc={charAvatars[character.id]} className="w-10 h-10" />
+               ) : (
+                   <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shadow-lg text-white/50">
+                       <Icons.Users />
+                   </div>
+               )}
                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-black/50 animate-pulse shadow-[0_0_8px_currentColor]" style={{ backgroundColor: themeColor, color: themeColor }}></span>
              </div>
              <div className="flex flex-col justify-center min-w-0">
@@ -1139,8 +1145,29 @@ const App = () => {
 
                 {displayMessages.map((msg, idx) => {
                     const isUser = msg.sender === Sender.USER;
-                    const showAvatar = !isUser && (idx === 0 || displayMessages[idx-1].sender === Sender.USER || displayMessages[idx-1].characterId !== msg.characterId);
-                    const msgChar = !isUser && msg.characterId ? CHARACTERS[msg.characterId] : activeCharacter;
+                    
+                    // Logic to resolve character for group chats if ID is missing (historical data fix)
+                    let msgChar = !isUser && msg.characterId ? CHARACTERS[msg.characterId] : activeCharacter;
+                    let displayText = msg.text;
+
+                    if (!isUser && !msgChar && currentSession?.type === 'group') {
+                         // Attempt to parse "Name: Message" format for fallback display
+                         const match = displayText.match(/^([^:：]+)[:：](.*)/);
+                         if (match) {
+                             const name = match[1].trim();
+                             const foundChar = Object.values(CHARACTERS).find(c => 
+                                c.name === name || 
+                                c.romaji.toLowerCase() === name.toLowerCase() || 
+                                c.name.includes(name)
+                             );
+                             if (foundChar) {
+                                 msgChar = foundChar;
+                                 displayText = match[2].trim();
+                             }
+                         }
+                    }
+
+                    const showAvatar = !isUser && (idx === 0 || displayMessages[idx-1].sender === Sender.USER || (displayMessages[idx-1].characterId !== msg.characterId && displayMessages[idx-1].characterId !== msgChar?.id));
 
                     return (
                         <div key={msg.id} className={`flex items-end gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'} animate-fade-in-up`}>
@@ -1171,7 +1198,7 @@ const App = () => {
                                         : { boxShadow: `inset 0 1px 0 rgba(255,255,255,0.1)` }
                                     }
                                  >
-                                     {msg.text}
+                                     {displayText}
                                  </div>
                                  <span className="text-[9px] opacity-40 px-2 font-sans tracking-wide">
                                      {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}

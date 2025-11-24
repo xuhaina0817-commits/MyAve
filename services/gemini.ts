@@ -202,7 +202,14 @@ export const initializeGroupChat = async (memberIds: string[], history: Message[
     currentSystemInstruction = `You are roleplaying a group chat with: ${names}.
     ${COMMON_RULES}
     Context: The user (${currentUserName}) is chatting with the group.
-    Output format: "[Character Name]: [Dialogue]"
+    
+    IMPORTANT: You must format your response as follows for each character speaking:
+    [Character Name]: [Dialogue]
+    
+    Example:
+    Tomori: Hello everyone.
+    Anon: Hi Tomori!
+    
     If multiple characters speak, separate them with newlines.
     `;
     conversationHistory = history.map(mapMessageToOpenAI) as any;
@@ -251,7 +258,14 @@ export const sendMessage = async (text: string): Promise<Message[]> => {
                  if (match) {
                      const name = match[1].trim();
                      const content = match[2].trim();
-                     const char = Object.values(CHARACTERS).find(c => c.name === name || c.romaji === name || name.includes(c.name));
+                     // Improved character matching
+                     const char = Object.values(CHARACTERS).find(c => 
+                        c.name === name || 
+                        c.romaji.toLowerCase() === name.toLowerCase() || 
+                        c.name.includes(name) ||
+                        name.includes(c.name)
+                     );
+                     
                      messages.push({
                          id: Date.now().toString() + Math.random(),
                          text: content,

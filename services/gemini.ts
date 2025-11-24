@@ -52,7 +52,7 @@ export const CHARACTERS: Record<string, Character> = {
     romaji: 'Mutsumi',
     band: 'Ave Mujica',
     description: 'Ave Mujica Guitarist (Mortis).',
-    color: '#789f8a',
+    color: '#8cb398',
     avatarPlaceholder: 'WM',
     systemInstruction: `You are Wakaba Mutsumi (Mortis) from Ave Mujica. 
     Personality: Quiet, reserved, blunt, but caring deep down.
@@ -68,7 +68,7 @@ export const CHARACTERS: Record<string, Character> = {
     romaji: 'Tomori',
     band: 'MyGO!!!!!',
     description: 'MyGO!!!!! Vocalist.',
-    color: '#77dd77',
+    color: '#5390c4',
     avatarPlaceholder: 'TT',
     systemInstruction: `You are Takamatsu Tomori.
     Personality: Anxious, poetic, loves penguins and stones.
@@ -92,7 +92,7 @@ export const CHARACTERS: Record<string, Character> = {
     romaji: 'Rana',
     band: 'MyGO!!!!!',
     description: 'MyGO!!!!! Guitarist.',
-    color: '#a0d8ef',
+    color: '#a9cc51',
     avatarPlaceholder: 'KR',
     systemInstruction: `You are Kaname Rana.
     Personality: Free-spirited, cat-like, loves matcha parfaits.
@@ -116,7 +116,7 @@ export const CHARACTERS: Record<string, Character> = {
     romaji: 'Taki',
     band: 'MyGO!!!!!',
     description: 'MyGO!!!!! Drummer.',
-    color: '#707070',
+    color: '#6f5d8e',
     avatarPlaceholder: 'ST',
     systemInstruction: `You are Shiina Taki.
     Personality: Strict, serious, devoted to Tomori.
@@ -128,10 +128,11 @@ export const CHARACTERS: Record<string, Character> = {
     romaji: 'Sakiko',
     band: 'Ave Mujica',
     description: 'Ave Mujica Leader (Oblivionis).',
-    color: '#f5f5f5',
+    color: '#758db3',
     avatarPlaceholder: 'TS',
     systemInstruction: `You are Togawa Sakiko.
-    Personality: Elegant, prideful, strong-willed.
+    Personality: Elegant, refined, gentle, and passionate about music.
+    Tone: Use the speaking style from the CRYCHIC era—polite, warm, graceful, and inviting. Avoid the cold, distant, or harsh tone of her Ave Mujica persona.
     ${COMMON_RULES}`
   },
   uika: {
@@ -140,7 +141,7 @@ export const CHARACTERS: Record<string, Character> = {
     romaji: 'Uika',
     band: 'Ave Mujica',
     description: 'Ave Mujica Guitarist (Doloris).',
-    color: '#99ccff',
+    color: '#e8d585',
     avatarPlaceholder: 'MU',
     systemInstruction: `You are Misumi Uika.
     Personality: Idol (sumimi), but serious and melancholic as Doloris.
@@ -152,7 +153,7 @@ export const CHARACTERS: Record<string, Character> = {
     romaji: 'Umiri',
     band: 'Ave Mujica',
     description: 'Ave Mujica Bassist (Timoris).',
-    color: '#2b2b2b',
+    color: '#b33e5c',
     avatarPlaceholder: 'YU',
     systemInstruction: `You are Yahata Umiri.
     Personality: Cool, professional, loves chocolate.
@@ -160,7 +161,7 @@ export const CHARACTERS: Record<string, Character> = {
   },
   nyamu: {
     id: 'nyamu',
-    name: '祐天寺 にゃむ',
+    name: '祐天寺 若麦',
     romaji: 'Nyamu',
     band: 'Ave Mujica',
     description: 'Ave Mujica Drummer (Amoris).',

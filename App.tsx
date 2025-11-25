@@ -6,6 +6,21 @@ import { Message, Sender, Session, Character } from './types';
 declare global {
   namespace JSX {
     interface IntrinsicElements {
+      div: any;
+      span: any;
+      p: any;
+      a: any;
+      img: any;
+      button: any;
+      input: any;
+      h1: any;
+      h2: any;
+      h3: any;
+      canvas: any;
+      svg: any;
+      path: any;
+      circle: any;
+      rect: any;
       [elemName: string]: any;
     }
   }

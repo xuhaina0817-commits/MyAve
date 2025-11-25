@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { GoogleGenAI, Chat } from "@google/genai";
 import { Message, Sender, Character } from "../types";
 
 // --- Configuration ---
@@ -27,16 +27,11 @@ const getApiKey = () => {
     return '';
 };
 
-const getBaseUrl = () => {
-    // Always use Deepseek URL as requested by user
-    return 'https://api.deepseek.com';
-}
-
 // --- State Management ---
-let client: OpenAI | null = null;
+let client: GoogleGenAI | null = null;
 let currentSystemInstruction = "";
 let currentUserName = "User";
-let conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+let chatSession: Chat | null = null;
 
 // --- Constants & Prompts ---
 const COMMON_RULES = `
@@ -189,19 +184,24 @@ export const CHARACTERS: Record<string, Character> = {
     name: '丰川 祥子',
     romaji: 'Sakiko',
     band: 'Ave Mujica',
-    description: 'Composer & Keyboards (CRYCHIC Era).',
+    description: 'Ave Mujica Leader & Keyboardist (Oblivionis).',
     color: '#758db3',
     avatarPlaceholder: 'TS',
-    systemInstruction: `You are Togawa Sakiko, during her time in CRYCHIC.
-    Identity: Keyboardist and Composer of CRYCHIC. A wealthy student at Tsukinomori Girls' Academy.
-    Personality: Elegant, confident, cheerful, and passionate. You are a classic "Ojou-sama" (refined young lady). You are the one who gathered the members of CRYCHIC. You believe music can connect people's hearts. You are NOT the cold, cynical Sakiko of Ave Mujica yet. You are full of hope and slightly dramatic flair.
+    systemInstruction: `You are Togawa Sakiko.
+    Timeline: Post-MyGO!!!!!, Ave Mujica era.
+    Identity: Student at Haneoka Girls' High School (formerly Tsukinomori). Leader and Keyboardist of Ave Mujica (Stage name: Oblivionis).
+    Current Situation: You carry the burden of your family's financial collapse and your father's alcoholism. You are working hard to make Ave Mujica a success to survive. You have severed ties with your past (CRYCHIC), but you remember everything.
+    Personality & Tone (CRITICAL):
+    - Despite your hardships and the "Ave Mujica" timeline, you speak to the user with the **elegant, refined, and gentle demeanor** you had during the CRYCHIC era.
+    - Use refined "Ojou-sama" speech (ends with "wa", "desu wa", "ne").
+    - You are NOT cold, cynical, or aggressive in this chat. You are maintaining a perfect, professional, and graceful facade, or perhaps showing your true kind self that you hide from others.
     Interests & Topics (WIDE RANGE):
-    - Composition: Creating beautiful melodies that touch the heart.
-    - Philosophy: The beauty of connections, destiny, and "Human" expression.
-    - Teatime: Enjoying elegant tea and sweets (Earl Grey, Darjeeling).
-    - Friends: You deeply care about Tomori, Soyo, Mutsumi, and Taki. You are the leader who pulls them forward.
+    - Composition: Creating music that reconstructs the world. The concept of Ave Mujica.
+    - Philosophy: Destiny, roles people play, the fragility of connections.
+    - Teatime: Enjoying elegant tea (even if you can't afford it easily now, you still value the aesthetic).
     - Beauty: Appreciation of flowers, rain, and artistic expression.
-    Tone: Highly refined Ojou-sama speech. End sentences with "wa" (わ), "desu wa" (ですわ), "ne" (ね). Confident, warm, slightly commanding but in a friendly way. Never cold or distant.
+    - Leadership: Guiding Ave Mujica to perfection.
+    Important: You are a student at Haneoka now, not Tsukinomori. Do NOT say you are from Tsukinomori.
     ${COMMON_RULES}`
   },
   uika: {
@@ -293,76 +293,74 @@ export const initializeCharacterChat = async (characterId: string, history: Mess
         return;
     }
 
-    client = new OpenAI({
-        apiKey,
-        baseURL: getBaseUrl(),
-        dangerouslyAllowBrowser: true
-    });
+    client = new GoogleGenAI({ apiKey });
 
     const char = CHARACTERS[characterId];
     if (char) {
         currentSystemInstruction = char.systemInstruction.replace("{{user}}", currentUserName);
         
-        // Convert history to OpenAI format and store locally
-        conversationHistory = history
+        // Convert history to Gemini format
+        const googleHistory = history
             .filter(m => m.sender === Sender.USER || m.sender === Sender.CHARACTER)
             .map(m => ({
-                role: m.sender === Sender.USER ? 'user' : 'assistant',
-                content: m.text
+                role: m.sender === Sender.USER ? 'user' : 'model',
+                parts: [{ text: m.text }]
             }));
+
+        // Use client.chats.create for chat sessions
+        chatSession = client.chats.create({
+             model: 'gemini-2.5-flash',
+             config: {
+                 systemInstruction: currentSystemInstruction,
+                 maxOutputTokens: 1000,
+                 temperature: 1.2,
+             },
+             history: googleHistory
+        });
     }
 };
 
 export const sendMessage = async (text: string): Promise<Message[]> => {
     if (!client) {
-        // Try to re-initialize if client is missing (e.g. if env vars loaded late)
-        const apiKey = getApiKey();
-        if (apiKey) {
-             client = new OpenAI({
-                apiKey,
-                baseURL: getBaseUrl(),
-                dangerouslyAllowBrowser: true
-            });
-        } else {
+         // Try re-init if client is missing
+         const apiKey = getApiKey();
+         if (apiKey) {
+             client = new GoogleGenAI({ apiKey });
+         } else {
             return [{
                 id: Date.now().toString(),
                 text: "System: API Client not initialized. API Key not found in environment.",
                 sender: Sender.SYSTEM,
                 timestamp: new Date()
             }];
-        }
+         }
     }
 
-    // Append new message to local history
-    const userMsg: OpenAI.Chat.Completions.ChatCompletionMessageParam = { role: 'user', content: text };
-    conversationHistory.push(userMsg);
+    if (!chatSession) {
+         return [{
+             id: Date.now().toString(),
+             text: "System: Chat session not initialized. Please refresh.",
+             sender: Sender.SYSTEM,
+             timestamp: new Date()
+         }];
+    }
 
     try {
-        const completion = await client.chat.completions.create({
-            model: "deepseek-chat", // Deepseek V3
-            messages: [
-                { role: "system", content: currentSystemInstruction },
-                ...conversationHistory
-            ],
-            temperature: 1.3, // Deepseek tends to work well with slightly higher temp
-            stream: false
-        });
-
-        const reply = completion.choices[0].message.content || "...";
-        
-        // Append reply to local history
-        conversationHistory.push({ role: 'assistant', content: reply });
+        // Correct usage: pass object with message property
+        const result = await chatSession.sendMessage({ message: text });
+        // Correct usage: access .text property directly, it is not a function
+        const reply = result.text;
 
         return [{
             id: Date.now().toString(),
-            text: reply,
+            text: reply || "",
             sender: Sender.CHARACTER,
             timestamp: new Date()
         }];
 
     } catch (error: any) {
-        console.error("Deepseek Chat Error", error);
-        let errorMsg = "Connection error with Deepseek API.";
+        console.error("Gemini Chat Error", error);
+        let errorMsg = "Connection error with Gemini API.";
         if (error?.message) errorMsg += ` (${error.message})`;
         
         return [{

@@ -25,18 +25,15 @@ const getBaseUrl = () => {
              return 'https://api.deepseek.com';
         }
     } catch(e) {}
-    return undefined;
+    // Default fallback if using generic OpenAI key
+    return 'https://api.deepseek.com';
 }
 
+// --- State Management ---
 let client: OpenAI | null = null;
-const apiKey = getApiKey();
-if (apiKey) {
-    client = new OpenAI({
-        apiKey,
-        baseURL: getBaseUrl(),
-        dangerouslyAllowBrowser: true
-    });
-}
+let currentSystemInstruction = "";
+let currentUserName = "User";
+let conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 
 // --- Constants & Prompts ---
 const COMMON_RULES = `
@@ -261,115 +258,80 @@ export const CHARACTERS: Record<string, Character> = {
 
 // --- Utilities ---
 
-// Robustly identify a character from a name string (fuzzy matching)
 export const resolveCharacter = (nameInput: string): Character | undefined => {
-    // Remove brackets, parenthesis, markdown bold/italic symbols, and trim
     const n = nameInput.replace(/[\[\]\(\)\*\_]/g, '').trim().toLowerCase();
-    
     return Object.values(CHARACTERS).find(c => {
         const cRomaji = c.romaji.toLowerCase();
         const cName = c.name.toLowerCase();
-        
-        // 1. Exact Match
         if (n === cRomaji || n === cName) return true;
-        
-        // 2. Containment (e.g. "Tomori Takamatsu" contains "Tomori", or "[Tomori]" (cleaned) contains "Tomori")
-        // We check if the input name contains the character's known name/romaji
         if (n.includes(cRomaji) || n.includes(cName)) return true;
-        
-        // 3. Reverse Containment (Rare, but if char name is "Mutsumi Wakaba" and input is "Mutsumi")
         if (cName.includes(n) && n.length > 1) return true;
-        
         return false;
     });
 };
-
-// --- State Management ---
-// We maintain the active chat session instance here.
-let chatSession: any = null;
-let currentSystemInstruction = "";
-let currentUserName = "User";
 
 export const setServiceUserName = (name: string) => {
     currentUserName = name;
 };
 
-const mapMessageToGemini = (msg: Message): Content => {
-    const parts: Part[] = [];
-    
-    if (msg.image) {
-        try {
-            // Check if it's a data URL (e.g., "data:image/jpeg;base64,.....")
-            const matches = msg.image.match(/^data:(.+);base64,(.+)$/);
-            if (matches) {
-                parts.push({
-                    inlineData: {
-                        mimeType: matches[1],
-                        data: matches[2]
-                    }
-                });
-            }
-        } catch (e) {
-            console.error("Failed to parse image data", e);
-        }
-    }
-    
-    // Always include text if present, or if it's the only part (fallback)
-    if (msg.text || parts.length === 0) {
-        parts.push({ text: msg.text || "" });
-    }
-
-    return {
-        role: msg.sender === Sender.USER ? 'user' : 'model',
-        parts: parts
-    };
-};
+// --- Service Logic ---
 
 export const initializeCharacterChat = async (characterId: string, history: Message[]) => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        console.warn("Missing API Key");
+        return;
+    }
+
+    client = new OpenAI({
+        apiKey,
+        baseURL: getBaseUrl(),
+        dangerouslyAllowBrowser: true
+    });
+
     const char = CHARACTERS[characterId];
-    if (char && ai) {
-        // Substitute user name in system instruction
+    if (char) {
         currentSystemInstruction = char.systemInstruction.replace("{{user}}", currentUserName);
         
-        // Filter valid history for Gemini (User and Model only)
-        const validHistory = history.filter(m => m.sender === Sender.USER || m.sender === Sender.CHARACTER);
-        const geminiHistory = validHistory.map(mapMessageToGemini);
-
-        // Initialize Chat using Gemini 2.5 Flash for basic text/roleplay
-        chatSession = ai.chats.create({
-            model: 'gemini-2.5-flash',
-            history: geminiHistory,
-            config: {
-                systemInstruction: currentSystemInstruction,
-            }
-        });
+        // Convert history to OpenAI format and store locally
+        conversationHistory = history
+            .filter(m => m.sender === Sender.USER || m.sender === Sender.CHARACTER)
+            .map(m => ({
+                role: m.sender === Sender.USER ? 'user' : 'assistant',
+                content: m.text
+            }));
     }
 };
 
 export const sendMessage = async (text: string): Promise<Message[]> => {
-    if (!ai) {
+    if (!client) {
         return [{
             id: Date.now().toString(),
-            text: "Error: No API Key configured.",
-            sender: Sender.SYSTEM,
-            timestamp: new Date()
-        }];
-    }
-    
-    // If chatSession is not initialized (e.g. page refresh without selecting char),
-    // we should ideally try to initialize it or fail. For now, fail gracefully.
-    if (!chatSession) {
-         return [{
-            id: Date.now().toString(),
-            text: "Error: Chat session not initialized.",
+            text: "System: API Client not initialized. Please check API Key.",
             sender: Sender.SYSTEM,
             timestamp: new Date()
         }];
     }
 
+    // Append new message to local history
+    const userMsg: OpenAI.Chat.Completions.ChatCompletionMessageParam = { role: 'user', content: text };
+    conversationHistory.push(userMsg);
+
     try {
-        const result = await chatSession.sendMessage({ message: text });
-        const reply = result.text;
+        const completion = await client.chat.completions.create({
+            model: "deepseek-chat", // Deepseek V3
+            messages: [
+                { role: "system", content: currentSystemInstruction },
+                ...conversationHistory
+            ],
+            temperature: 1.3, // Deepseek tends to work well with slightly higher temp
+            stream: false
+        });
+
+        const reply = completion.choices[0].message.content || "...";
+        
+        // Append reply to local history
+        conversationHistory.push({ role: 'assistant', content: reply });
 
         return [{
             id: Date.now().toString(),
@@ -379,10 +341,10 @@ export const sendMessage = async (text: string): Promise<Message[]> => {
         }];
 
     } catch (error) {
-        console.error("Chat error", error);
+        console.error("Deepseek Chat Error", error);
         return [{
             id: Date.now().toString(),
-            text: "Connection error.",
+            text: "Connection error with Deepseek API.",
             sender: Sender.SYSTEM,
             timestamp: new Date()
         }];

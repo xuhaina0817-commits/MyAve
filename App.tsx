@@ -1,8 +1,15 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, initializeCharacterChat, sendMessage, setServiceUserName, resolveCharacter } from './services/gemini';
 import { Message, Sender, Session, Character } from './types';
+
+// Fix for missing JSX types
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      [elemName: string]: any;
+    }
+  }
+}
 
 // --- Constants ---
 const STORAGE_KEY = 'mutsumi_chat_sessions_v4';

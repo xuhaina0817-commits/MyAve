@@ -1,4 +1,4 @@
-import { GoogleGenAI, Chat } from "@google/genai";
+import OpenAI from "openai";
 import { Message, Sender, Character } from "../types";
 
 // --- Configuration ---
@@ -28,10 +28,11 @@ const getApiKey = () => {
 };
 
 // --- State Management ---
-let client: GoogleGenAI | null = null;
+let client: OpenAI | null = null;
 let currentSystemInstruction = "";
 let currentUserName = "User";
-let chatSession: Chat | null = null;
+// OpenAI (Deepseek) requires sending the full history every time
+let chatHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 
 // --- Constants & Prompts ---
 const COMMON_RULES = `
@@ -269,30 +270,24 @@ export const initializeCharacterChat = async (characterId: string, history: Mess
         return;
     }
 
-    client = new GoogleGenAI({ apiKey });
+    // Initialize OpenAI client for Deepseek
+    client = new OpenAI({
+        apiKey: apiKey,
+        baseURL: "https://api.deepseek.com",
+        dangerouslyAllowBrowser: true // Allowed for this client-side demo
+    });
 
     const char = CHARACTERS[characterId];
     if (char) {
         currentSystemInstruction = char.systemInstruction.replace("{{user}}", currentUserName);
         
-        // Convert history to Gemini format
-        const googleHistory = history
+        // Convert existing local message history to OpenAI Chat Completion format
+        chatHistory = history
             .filter(m => m.sender === Sender.USER || m.sender === Sender.CHARACTER)
             .map(m => ({
-                role: m.sender === Sender.USER ? 'user' : 'model',
-                parts: [{ text: m.text }]
+                role: m.sender === Sender.USER ? 'user' : 'assistant',
+                content: m.text
             }));
-
-        // Use client.chats.create for chat sessions
-        chatSession = client.chats.create({
-             model: 'gemini-2.5-flash',
-             config: {
-                 systemInstruction: currentSystemInstruction,
-                 maxOutputTokens: 1000,
-                 temperature: 1.1, // Slightly lowered for more coherence while keeping creativity
-             },
-             history: googleHistory
-        });
     }
 };
 
@@ -301,43 +296,55 @@ export const sendMessage = async (text: string): Promise<Message[]> => {
          // Try re-init if client is missing
          const apiKey = getApiKey();
          if (apiKey) {
-             client = new GoogleGenAI({ apiKey });
+             client = new OpenAI({
+                apiKey: apiKey,
+                baseURL: "https://api.deepseek.com",
+                dangerouslyAllowBrowser: true
+            });
          } else {
             return [{
                 id: Date.now().toString(),
-                text: "System: API Client not initialized. API Key not found in environment.",
+                text: "System: API Client not initialized. API Key not found.",
                 sender: Sender.SYSTEM,
                 timestamp: new Date()
             }];
          }
     }
 
-    if (!chatSession) {
-         return [{
-             id: Date.now().toString(),
-             text: "System: Chat session not initialized. Please refresh.",
-             sender: Sender.SYSTEM,
-             timestamp: new Date()
-         }];
-    }
-
     try {
-        // Correct usage: pass object with message property
-        const result = await chatSession.sendMessage({ message: text });
-        // Correct usage: access .text property directly, it is not a function
-        const reply = result.text;
+        // Add user message to local history
+        chatHistory.push({ role: 'user', content: text });
+
+        // Call Deepseek API
+        const completion = await client.chat.completions.create({
+            messages: [
+                { role: "system", content: currentSystemInstruction },
+                ...chatHistory
+            ],
+            model: "deepseek-chat",
+            temperature: 1.1, // Adjusted for creative roleplay
+            max_tokens: 1000
+        });
+
+        const reply = completion.choices[0]?.message?.content || "";
+        
+        // Add model reply to local history
+        chatHistory.push({ role: 'assistant', content: reply });
 
         return [{
             id: Date.now().toString(),
-            text: reply || "",
+            text: reply,
             sender: Sender.CHARACTER,
             timestamp: new Date()
         }];
 
     } catch (error: any) {
-        console.error("Gemini Chat Error", error);
-        let errorMsg = "Connection error with Gemini API.";
+        console.error("Deepseek Chat Error", error);
+        let errorMsg = "Connection error with Deepseek API.";
         if (error?.message) errorMsg += ` (${error.message})`;
+        
+        // Remove the failed user message from history so they can try again
+        chatHistory.pop();
         
         return [{
             id: Date.now().toString(),

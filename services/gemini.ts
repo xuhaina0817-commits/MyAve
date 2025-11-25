@@ -285,7 +285,8 @@ export const resolveCharacter = (nameInput: string): Character | undefined => {
 };
 
 // --- State Management ---
-let conversationHistory: { role: 'system' | 'user' | 'assistant', content: string }[] = [];
+// We maintain the active chat session instance here.
+let chatSession: any = null;
 let currentSystemInstruction = "";
 let currentUserName = "User";
 
@@ -293,21 +294,60 @@ export const setServiceUserName = (name: string) => {
     currentUserName = name;
 };
 
-const mapMessageToOpenAI = (msg: Message) => ({
-    role: msg.sender === Sender.USER ? 'user' : 'assistant',
-    content: msg.text
-});
+const mapMessageToGemini = (msg: Message): Content => {
+    const parts: Part[] = [];
+    
+    if (msg.image) {
+        try {
+            // Check if it's a data URL (e.g., "data:image/jpeg;base64,.....")
+            const matches = msg.image.match(/^data:(.+);base64,(.+)$/);
+            if (matches) {
+                parts.push({
+                    inlineData: {
+                        mimeType: matches[1],
+                        data: matches[2]
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Failed to parse image data", e);
+        }
+    }
+    
+    // Always include text if present, or if it's the only part (fallback)
+    if (msg.text || parts.length === 0) {
+        parts.push({ text: msg.text || "" });
+    }
+
+    return {
+        role: msg.sender === Sender.USER ? 'user' : 'model',
+        parts: parts
+    };
+};
 
 export const initializeCharacterChat = async (characterId: string, history: Message[]) => {
     const char = CHARACTERS[characterId];
-    if (char) {
-        currentSystemInstruction = char.systemInstruction;
-        conversationHistory = history.map(mapMessageToOpenAI) as any;
+    if (char && ai) {
+        // Substitute user name in system instruction
+        currentSystemInstruction = char.systemInstruction.replace("{{user}}", currentUserName);
+        
+        // Filter valid history for Gemini (User and Model only)
+        const validHistory = history.filter(m => m.sender === Sender.USER || m.sender === Sender.CHARACTER);
+        const geminiHistory = validHistory.map(mapMessageToGemini);
+
+        // Initialize Chat using Gemini 2.5 Flash for basic text/roleplay
+        chatSession = ai.chats.create({
+            model: 'gemini-2.5-flash',
+            history: geminiHistory,
+            config: {
+                systemInstruction: currentSystemInstruction,
+            }
+        });
     }
 };
 
 export const sendMessage = async (text: string): Promise<Message[]> => {
-    if (!client) {
+    if (!ai) {
         return [{
             id: Date.now().toString(),
             text: "Error: No API Key configured.",
@@ -315,22 +355,21 @@ export const sendMessage = async (text: string): Promise<Message[]> => {
             timestamp: new Date()
         }];
     }
-
-    // Add user message to local state immediately so context is correct
-    conversationHistory.push({ role: 'user', content: text });
+    
+    // If chatSession is not initialized (e.g. page refresh without selecting char),
+    // we should ideally try to initialize it or fail. For now, fail gracefully.
+    if (!chatSession) {
+         return [{
+            id: Date.now().toString(),
+            text: "Error: Chat session not initialized.",
+            sender: Sender.SYSTEM,
+            timestamp: new Date()
+        }];
+    }
 
     try {
-        const response = await client.chat.completions.create({
-            model: "deepseek-chat", // Defaults to deepseek, fallback to others if key differs
-            messages: [
-                { role: "system", content: currentSystemInstruction.replace("{{user}}", currentUserName) },
-                ...conversationHistory.slice(-20) // Keep context window reasonable
-            ],
-            temperature: 1.0,
-        });
-
-        const reply = response.choices[0]?.message?.content || "";
-        conversationHistory.push({ role: 'assistant', content: reply });
+        const result = await chatSession.sendMessage({ message: text });
+        const reply = result.text;
 
         return [{
             id: Date.now().toString(),

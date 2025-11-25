@@ -707,10 +707,7 @@ const Sidebar = ({
       </div>
 
       <div className="p-6 pt-4 shrink-0 bg-black/20 backdrop-blur-md border-t border-white/5 z-20">
-           <a href="https://b23.tv/5v3enDD" target="_blank" rel="noopener noreferrer" className="text-lg md:text-xl text-white/40 hover:text-white/70 transition-colors block mb-4 tracking-wide font-serif italic text-center">
-               Bilibili @-Alisss-
-           </a>
-           <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-3 rounded-2xl transition-colors group" onClick={onUploadUserAvatar}>
+           <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-3 rounded-2xl transition-colors group mb-4" onClick={onUploadUserAvatar}>
                <div className="flex items-center gap-3 w-full">
                    <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-white/30 transition-colors shrink-0">
                        {userAvatar ? <img src={userAvatar} alt="Me" className="w-full h-full object-cover" /> : <Icons.User />}
@@ -724,6 +721,9 @@ const Sidebar = ({
                    />
                </div>
            </div>
+           <a href="https://b23.tv/5v3enDD" target="_blank" rel="noopener noreferrer" className="text-xs text-white/30 hover:text-white/60 transition-colors block tracking-widest font-serif italic text-center">
+               Bilibili @-Alisss-
+           </a>
       </div>
     </div>
   );

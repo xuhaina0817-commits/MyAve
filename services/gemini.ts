@@ -5,12 +5,22 @@ import { Message, Sender, Character } from "../types";
 // --- Configuration ---
 const getApiKey = () => {
     try {
+        // Priority 1: process.env.API_KEY (Standard for this environment)
+        // @ts-ignore
+        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+            // @ts-ignore
+            return process.env.API_KEY;
+        }
+        
+        // Priority 2: Vite/Client environment variables
         // @ts-ignore
         if (typeof import.meta !== 'undefined' && import.meta.env) {
             // @ts-ignore
             if (import.meta.env.VITE_DEEPSEEK_API_KEY) return import.meta.env.VITE_DEEPSEEK_API_KEY;
             // @ts-ignore
             if (import.meta.env.VITE_OPENAI_API_KEY) return import.meta.env.VITE_OPENAI_API_KEY;
+            // @ts-ignore
+            if (import.meta.env.API_KEY) return import.meta.env.API_KEY;
         }
     } catch (e) {
         console.error("Error accessing env vars", e);
@@ -19,13 +29,7 @@ const getApiKey = () => {
 };
 
 const getBaseUrl = () => {
-    try {
-        // @ts-ignore
-        if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_DEEPSEEK_API_KEY) {
-             return 'https://api.deepseek.com';
-        }
-    } catch(e) {}
-    // Default fallback if using generic OpenAI key
+    // Always use Deepseek URL as requested by user
     return 'https://api.deepseek.com';
 }
 
@@ -305,12 +309,22 @@ export const initializeCharacterChat = async (characterId: string, history: Mess
 
 export const sendMessage = async (text: string): Promise<Message[]> => {
     if (!client) {
-        return [{
-            id: Date.now().toString(),
-            text: "System: API Client not initialized. Please check API Key.",
-            sender: Sender.SYSTEM,
-            timestamp: new Date()
-        }];
+        // Try to re-initialize if client is missing (e.g. if env vars loaded late)
+        const apiKey = getApiKey();
+        if (apiKey) {
+             client = new OpenAI({
+                apiKey,
+                baseURL: getBaseUrl(),
+                dangerouslyAllowBrowser: true
+            });
+        } else {
+            return [{
+                id: Date.now().toString(),
+                text: "System: API Client not initialized. API Key not found in environment.",
+                sender: Sender.SYSTEM,
+                timestamp: new Date()
+            }];
+        }
     }
 
     // Append new message to local history
@@ -340,11 +354,14 @@ export const sendMessage = async (text: string): Promise<Message[]> => {
             timestamp: new Date()
         }];
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Deepseek Chat Error", error);
+        let errorMsg = "Connection error with Deepseek API.";
+        if (error?.message) errorMsg += ` (${error.message})`;
+        
         return [{
             id: Date.now().toString(),
-            text: "Connection error with Deepseek API.",
+            text: errorMsg,
             sender: Sender.SYSTEM,
             timestamp: new Date()
         }];

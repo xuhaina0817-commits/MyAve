@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, initializeCharacterChat, sendMessage, setServiceUserName, resolveCharacter } from './services/gemini';
 import { Message, Sender, Session, Character } from './types';
@@ -233,8 +234,8 @@ const ChatHeader = ({ character, session, onToggleSidebar, charAvatars }: { char
 
   return (
     <div 
-      className="absolute top-28 left-4 right-4 md:top-14 md:left-6 md:right-6 h-16 z-30 flex items-center justify-between px-6 rounded-[2rem] glass-panel transition-all duration-500 shadow-xl"
-      style={{ border: `1px solid ${themeColor}20` }}
+      className="absolute top-6 left-4 right-4 md:top-10 md:left-6 md:right-6 h-16 z-30 flex items-center justify-between px-6 rounded-[2rem] glass-panel transition-all duration-500 shadow-xl"
+      style={{ border: `1px solid ${themeColor}20`, marginTop: 'env(safe-area-inset-top)' }}
     >
        <div className="flex items-center gap-4 overflow-hidden">
           <button onClick={onToggleSidebar} className="md:hidden text-white/70 hover:text-white transition-colors">
@@ -706,7 +707,7 @@ const Sidebar = ({
       </div>
 
       <div className="p-6 pt-4 shrink-0 bg-black/20 backdrop-blur-md border-t border-white/5 z-20">
-           <a href="https://b23.tv/5v3enDD" target="_blank" rel="noopener noreferrer" className="text-xs md:text-sm text-white/40 hover:text-white/70 transition-colors block mb-4 tracking-wide font-serif italic text-center">
+           <a href="https://b23.tv/5v3enDD" target="_blank" rel="noopener noreferrer" className="text-lg md:text-xl text-white/40 hover:text-white/70 transition-colors block mb-4 tracking-wide font-serif italic text-center">
                Bilibili @-Alisss-
            </a>
            <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-3 rounded-2xl transition-colors group" onClick={onUploadUserAvatar}>
@@ -947,7 +948,7 @@ const App = () => {
             />
         )}
 
-        <div className={`fixed top-28 bottom-4 left-4 z-50 w-72 glass-panel rounded-[2.5rem] transform transition-transform duration-500 border border-white/5 shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[120%] md:translate-x-0'} md:top-14 md:left-6 md:bottom-6`}>
+        <div className={`fixed top-6 bottom-6 left-4 z-50 w-72 glass-panel rounded-[2.5rem] transform transition-transform duration-500 border border-white/5 shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[120%] md:translate-x-0'} md:top-10 md:left-6 md:bottom-10`} style={{ marginTop: 'env(safe-area-inset-top)' }}>
              <Sidebar 
                 activeCharacterId={activeCharacterId || null}
                 onSelectCharacter={handleSelectCharacter}
@@ -972,7 +973,7 @@ const App = () => {
                 charAvatars={charAvatars}
             />
             
-            <div className="flex-1 overflow-y-auto px-4 pt-60 pb-36 custom-scrollbar space-y-8 mask-gradient relative z-10" onClick={() => setIsSidebarOpen(false)}>
+            <div className="flex-1 overflow-y-auto px-4 pt-40 pb-36 custom-scrollbar space-y-8 mask-gradient relative z-10" onClick={() => setIsSidebarOpen(false)}>
                 {!currentSession && !draftCharacterId && (
                     <div className="flex flex-col items-center justify-center h-full text-white/30 space-y-6">
                         <div className="p-6 rounded-full glass-capsule"><Icons.Scan /></div>
